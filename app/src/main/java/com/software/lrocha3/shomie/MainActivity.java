@@ -2,7 +2,9 @@ package com.software.lrocha3.shomie;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -16,6 +18,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -40,8 +47,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-        Button my_button = (Button) findViewById(R.id.send);
-        my_button.setOnClickListener(this);
+        Button send_button = (Button) findViewById(R.id.send);
+        send_button.setOnClickListener(this);
+
+        Button mysql_button = (Button) findViewById(R.id.mysql_connect);
+        mysql_button.setOnClickListener(this);
 
     }
 
@@ -50,6 +60,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.send: {
                 SendMessageToUser(v);
+            }
+            case R.id.mysql_connect: {
+                new MySQLAsync().execute("");
             }
             break;
         }
@@ -113,4 +126,68 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    public void MySqlClose(Connection connect) {
+        try {
+            /* TODO: Clear statement and result sets here as well if null */
+
+            if (connect != null) {
+                connect.close();
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public boolean MySqlConnection() {
+        boolean result = false;
+        Connection connect = null;
+        try {
+            connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/Development", "dev", "development");
+
+            if (connect != null) {
+                result = true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            MySqlClose(connect);
+        }
+        return result;
+    }
+
+    private class MySQLAsync extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+
+            boolean result = MySqlConnection();
+
+            if (result == true) {
+                return "[MySQL] OK";
+            } else {
+                return "[MySQL] NOK";
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            Context context = getApplicationContext();
+            int duration = Toast.LENGTH_SHORT;
+
+            Toast toast = Toast.makeText(context, result, duration);
+            toast.show();
+        }
+
+        @Override
+        protected void onPreExecute() {
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+        }
+    }
+
+
 }
