@@ -21,13 +21,17 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 1;
-
+    private Connection connect = null;
+    private ResultSet resultSet = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,23 +63,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.send: {
-                SendMessageToUser(v);
+                String phone_number = "+351 917674816";
+                String messageToSend = "[Shomie] Hello !";
+
+                SendMessageToUser(v, messageToSend, phone_number);
             }
             case R.id.mysql_connect: {
-                new MySQLAsync().execute("");
+                new MySQLAsync().execute(v);
             }
             break;
         }
     }
 
-    public void SendMessageToUser(View v) {
+    public void SendMessageToUser(View v, String messageToSend, String phone_number) {
         Activity host = (Activity) v.getContext();
         if (ContextCompat.checkSelfPermission(host, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(host, Manifest.permission.READ_PHONE_STATE)
                 == PackageManager.PERMISSION_GRANTED) {
-
-            String messageToSend = "[Shomie] Hello !";
-            String phone_number = "+351 917674816";
 
             boolean valid_phone = false;
             if (!TextUtils.isEmpty(phone_number)) {
@@ -128,47 +132,119 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    public void MySqlClose(Connection connect) {
+    public void MySqlClose() {
         try {
             /* TODO: Clear statement and result sets here as well if null */
 
-            if (connect != null) {
-                connect.close();
+            if (this.connect != null) {
+                this.connect.close();
             }
+            if (resultSet != null) {
+                resultSet.close();
+            }
+
         } catch (Exception e) {
             System.out.println(e);
         }
     }
 
-    public boolean MySqlConnection() {
+    public boolean MySqlConnect() {
         boolean result = false;
-        Connection connect = null;
         try {
-            connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/Development", "dev", "development");
+            this.connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/shomie", "dev", "development");
 
-            if (connect != null) {
+            if (this.connect != null) {
                 result = true;
             }
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            MySqlClose(connect);
         }
         return result;
     }
 
-    private class MySQLAsync extends AsyncTask<String, Void, String> {
+    public boolean MySqlGetAllData(View v) {
+        boolean result = false;
+
+        try {
+            Statement statement = this.connect.createStatement();
+            ResultSet resultSet = statement
+                    .executeQuery("SELECT * FROM communication");
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String state = resultSet.getString("state");
+                String property_id = resultSet.getString("property_id");
+                String user_id = resultSet.getString("user_id");
+                String visit_date = resultSet.getString("visit_date");
+                String visit_time = resultSet.getString("visit_time");
+                String sms_status = resultSet.getString("sms_status");
+
+                System.out.println("id: " +  Integer.toString(id));
+                System.out.println("state: " + state);
+                System.out.println("property_id: " + property_id);
+                System.out.println("user_id: " + user_id);
+                System.out.println("visit_date: " + visit_date);
+                System.out.println("visit_time: " + visit_time);
+                System.out.println("sms_status: " + sms_status);
+
+                String phone_number = "+351 916563335";
+                String messageToSend = "[Shomie] Hello! The visit to the property " +
+                        property_id + " will be in the day " + visit_date
+                        + " at " + visit_time + ". Cheers.";
+
+                SendMessageToUser(v, messageToSend, phone_number);
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                phone_number = "+351 917674816";
+
+                SendMessageToUser(v, messageToSend, phone_number);
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
+        return result;
+    }
+
+
+    /*
+    *   // Statements allow to issue SQL queries to the database
+            statement = connect.createStatement();
+            // Result set get the result of the SQL query
+            resultSet = statement
+                    .executeQuery("select * from feedback.comments");
+            writeResultSet(resultSet);
+    * */
+
+    private class MySQLAsync extends AsyncTask<View, Void, String> {
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String doInBackground(View... params) {
 
-            boolean result = MySqlConnection();
+            View v = params[0];
+            boolean result = MySqlConnect();
+           String data = "[MySQL] NOK";
+
 
             if (result == true) {
-                return "[MySQL] OK";
+                MySqlGetAllData(v);
+
+                data = "[MySQL] OK";
             } else {
-                return "[MySQL] NOK";
+
             }
+
+            MySqlClose();
+            return data;
+
         }
 
         @Override
