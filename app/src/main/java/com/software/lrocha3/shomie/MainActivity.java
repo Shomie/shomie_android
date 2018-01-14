@@ -20,18 +20,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.software.lrocha3.mysql.MySQLWrapper;
+
 import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final int ASK_MULTIPLE_PERMISSION_REQUEST_CODE = 1;
     private Connection connect = null;
     private ResultSet resultSet = null;
+    private MySQLWrapper mySQLWrapper = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Button mysql_button = (Button) findViewById(R.id.mysql_connect);
         mysql_button.setOnClickListener(this);
-
+        mySQLWrapper = new MySQLWrapper();
     }
 
     @Override
@@ -66,46 +67,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String phone_number = "+351 917674816";
                 String messageToSend = "[Shomie] Hello !";
 
-                SendMessageToUser(v, messageToSend, phone_number);
+                SendMessageToUser(messageToSend, phone_number);
             }
             case R.id.mysql_connect: {
-                new MySQLAsync().execute(v);
+                boolean permissionsGranted = AreSMSPermissionsGranted(v);
+
+                if (permissionsGranted == true) {
+                    new MySQLAsync().execute("");
+                } else {
+                    System.out.println("All permissions are not granted");
+                    Snackbar.make(v, "All the permissions needed were not granted.", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
             }
             break;
         }
     }
 
-    public void SendMessageToUser(View v, String messageToSend, String phone_number) {
+    public boolean AreSMSPermissionsGranted(View v) {
         Activity host = (Activity) v.getContext();
         if (ContextCompat.checkSelfPermission(host, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(host, Manifest.permission.READ_PHONE_STATE)
                 == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-            boolean valid_phone = false;
-            if (!TextUtils.isEmpty(phone_number)) {
-                valid_phone = Patterns.PHONE.matcher(phone_number).matches();
-            }
+    public void SendMessageToUser(String messageToSend, String phone_number) {
 
-            if (valid_phone == true) {
-                try {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage(phone_number, null, messageToSend, null, null);
-                    System.out.println("Valid number");
+        boolean valid_phone = false;
+        if (!TextUtils.isEmpty(phone_number)) {
+            valid_phone = Patterns.PHONE.matcher(phone_number).matches();
+        }
+
+        if (valid_phone == true) {
+            try {
+                SmsManager smsManager = SmsManager.getDefault();
+                smsManager.sendTextMessage(phone_number, null, messageToSend, null, null);
+                System.out.println("Valid number");
                             /* TODO: Verify if the sms was sent successfully  */
-                    Snackbar.make(v, "Sent new message.", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                } catch (Exception e) {
-                    System.out.println(e);
-                }
-            } else {
-                        /* Number is not valid. Warn the user via database account. */
-                System.out.println("Invalid number");
+            } catch (Exception e) {
+                System.out.println(e);
             }
         } else {
-            Snackbar.make(v, "All the permissions needed were not granted.", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
+                        /* Number is not valid. Warn the user via database account. */
+            System.out.println("Invalid number");
         }
+
     }
 
     @Override
@@ -131,44 +141,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return super.onOptionsItemSelected(item);
     }
 
-
-    public void MySqlClose() {
-        try {
-            /* TODO: Clear statement and result sets here as well if null */
-
-            if (this.connect != null) {
-                this.connect.close();
-            }
-            if (resultSet != null) {
-                resultSet.close();
-            }
-
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    public boolean MySqlConnect() {
-        boolean result = false;
-        try {
-            this.connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/shomie", "dev", "development");
-
-            if (this.connect != null) {
-                result = true;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-    public boolean MySqlGetAllData(View v) {
-        boolean result = false;
+    public void ProcessVisitRequests() {
 
         try {
-            Statement statement = this.connect.createStatement();
-            ResultSet resultSet = statement
-                    .executeQuery("SELECT * FROM communication");
+            ResultSet resultSet = mySQLWrapper.GetAllVisitRequests();
 
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
@@ -179,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 String visit_time = resultSet.getString("visit_time");
                 String sms_status = resultSet.getString("sms_status");
 
-                System.out.println("id: " +  Integer.toString(id));
+                System.out.println("id: " + Integer.toString(id));
                 System.out.println("state: " + state);
                 System.out.println("property_id: " + property_id);
                 System.out.println("user_id: " + user_id);
@@ -187,12 +163,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 System.out.println("visit_time: " + visit_time);
                 System.out.println("sms_status: " + sms_status);
 
-                String phone_number = "+351 916563335";
+                String phone_number = "+351 917674816";
                 String messageToSend = "[Shomie] Hello! The visit to the property " +
                         property_id + " will be in the day " + visit_date
                         + " at " + visit_time + ". Cheers.";
 
-                SendMessageToUser(v, messageToSend, phone_number);
+                SendMessageToUser(messageToSend, phone_number);
 
                 try {
                     Thread.sleep(1000);
@@ -200,49 +176,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     e.printStackTrace();
                 }
 
-                phone_number = "+351 917674816";
-
-                SendMessageToUser(v, messageToSend, phone_number);
+                messageToSend = "[Shomie] Ola! A visita a sua propriedade " +
+                        property_id + " vai ser no dia " + visit_date
+                        + " as " + visit_time + ". Cumprimentos.";
+                SendMessageToUser(messageToSend, phone_number);
 
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-
-        return result;
     }
 
-
-    /*
-    *   // Statements allow to issue SQL queries to the database
-            statement = connect.createStatement();
-            // Result set get the result of the SQL query
-            resultSet = statement
-                    .executeQuery("select * from feedback.comments");
-            writeResultSet(resultSet);
-    * */
-
-    private class MySQLAsync extends AsyncTask<View, Void, String> {
+    private class MySQLAsync extends AsyncTask<String, Void, String> {
 
         @Override
-        protected String doInBackground(View... params) {
+        protected String doInBackground(String... params) {
 
-            View v = params[0];
-            boolean result = MySqlConnect();
-           String data = "[MySQL] NOK";
+            mySQLWrapper.Open();
+            boolean connectionState = mySQLWrapper.ConnectionState();
+            String data = "[MySQL] NOK";
 
 
-            if (result == true) {
-                MySqlGetAllData(v);
-
+            if (connectionState == true) {
                 data = "[MySQL] OK";
+                ProcessVisitRequests();
             } else {
 
             }
+            mySQLWrapper.Close();
 
-            MySqlClose();
             return data;
 
         }
