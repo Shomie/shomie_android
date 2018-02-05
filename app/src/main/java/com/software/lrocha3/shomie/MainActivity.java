@@ -7,12 +7,14 @@ import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +34,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Connection connect = null;
     private ResultSet resultSet = null;
     private MySQLWrapper mySQLWrapper = null;
+    Handler handler = new Handler();
+
+    private Runnable runnableCode = new Runnable() {
+
+        @Override
+        public void run() {
+
+            new MySQLAsync().execute("");
+            handler.postDelayed(this, 60000);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +71,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Button mysql_button = (Button) findViewById(R.id.mysql_connect);
         mysql_button.setOnClickListener(this);
         mySQLWrapper = new MySQLWrapper();
+
+
+        boolean permissionsGranted = AreSMSPermissionsGranted(mysql_button);
+
+        if (permissionsGranted == true) {
+            handler.post(runnableCode);
+        } else {
+            System.out.println("All permissions are not granted");
+            Snackbar.make(mysql_button, "All the permissions needed were not granted.", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }
+
+
+
     }
 
     @Override
@@ -96,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void SendMessageToUser(String messageToSend, String phone_number) {
+        boolean sms_sent = false;
 
         boolean valid_phone = false;
         if (!TextUtils.isEmpty(phone_number)) {
@@ -105,7 +133,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (valid_phone == true) {
             try {
                 SmsManager smsManager = SmsManager.getDefault();
-                smsManager.sendTextMessage(phone_number, null, messageToSend, null, null);
+                    smsManager.sendTextMessage(phone_number, null, messageToSend, null, null);
+
+
                 System.out.println("Valid number");
                             /* TODO: Verify if the sms was sent successfully  */
             } catch (Exception e) {
@@ -145,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         try {
             ResultSet resultSet = mySQLWrapper.GetAllVisitRequests();
-
+            if(resultSet != null){
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
                 String state = resultSet.getString("state");
@@ -176,12 +206,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     e.printStackTrace();
                 }
 
-                messageToSend = "[Shomie] Ola! A visita a sua propriedade " +
-                        property_id + " vai ser no dia " + visit_date
-                        + " as " + visit_time + ". Cumprimentos.";
+                messageToSend = "[Shomie] Ola! Recebeu um novo pedido para visita da propriedade " +
+                        property_id + " no dia " + visit_date
+                        + " as " + visit_time + ". Dirija-se a www.shomie.io para aceitar ou rejeitar. Cumprimentos.";
                 SendMessageToUser(messageToSend, phone_number);
+                mySQLWrapper.SetSmsStatusToTrue("UPDATE communication SET sms_status = 1 WHERE id = " + Integer.toString(id));
 
             }
+        }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -204,7 +236,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } else {
 
             }
-            mySQLWrapper.Close();
 
             return data;
 
@@ -228,5 +259,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public void onDestroy() {
+        mySQLWrapper.Close();
+        super.onDestroy();
+    }
 
 }

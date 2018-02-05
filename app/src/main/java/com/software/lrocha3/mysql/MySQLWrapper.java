@@ -38,8 +38,6 @@ public class MySQLWrapper {
                 this.connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/shomie", "dev", "development");
             }
         } catch (SQLException e) {
-            System.out.println("\n\nups\n\n");
-
             e.printStackTrace();
         }
     }
@@ -69,15 +67,23 @@ public class MySQLWrapper {
         try {
             statement = this.connect.createStatement();
             resultSet = statement
-                    .executeQuery("SELECT * FROM communication");
-            System.out.println("SELECT EXECUTES");
-
+                    .executeQuery("SELECT * FROM communication WHERE sms_status = 0 AND state = 0");
             return resultSet;
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         return null;
+    }
+
+    public void SetSmsStatusToTrue(String myStatement) {
+
+        try {
+            statement = this.connect.createStatement();
+            statement.executeUpdate(myStatement);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
 }
