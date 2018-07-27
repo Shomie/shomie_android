@@ -19,7 +19,10 @@ public class MySQLWrapper {
     public MySQLWrapper() {
     /* Initialize stuff here */
     }
-
+    @Override
+    public void finalize() {
+        Close();
+    }
     public boolean ConnectionState() {
         if (this.connect != null) {
             System.out.println("TRUE CONNECTED");

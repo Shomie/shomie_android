@@ -8,26 +8,4 @@
     tools:context="com.software.lrocha3.shomie.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/mysql_connect"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Connect Database"
-            tools:layout_editor_absoluteX="111dp"
-            tools:layout_editor_absoluteY="231dp" />
-
-        <Button
-            android:id="@+id/send"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Sens Sms"
-            tools:layout_editor_absoluteX="111dp"
-            tools:layout_editor_absoluteY="175dp" />
-    </LinearLayout>
-
 </android.support.constraint.ConstraintLayout>
