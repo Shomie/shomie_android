@@ -142,22 +142,18 @@ public class MainActivity extends AppCompatActivity {
             if(resultSet != null){
             while (resultSet.next()) {
                 int id = resultSet.getInt("id");
-                String state = resultSet.getString("state");
                 String property_id = resultSet.getString("property_id");
-                String user_id = resultSet.getString("user_id");
                 String visit_date = resultSet.getString("visit_date");
                 String visit_time = resultSet.getString("visit_time");
-                String sms_status = resultSet.getString("sms_status");
+                String landlord_id = resultSet.getString("landlord_id");
+                String phone_number = resultSet.getString("phone_number");
 
                 System.out.println("id: " + Integer.toString(id));
-                System.out.println("state: " + state);
+                System.out.println("landlord_id: " + property_id);
                 System.out.println("property_id: " + property_id);
-                System.out.println("user_id: " + user_id);
                 System.out.println("visit_date: " + visit_date);
                 System.out.println("visit_time: " + visit_time);
-                System.out.println("sms_status: " + sms_status);
 
-                String phone_number = "+351 917674816";
                 String messageToSend = "[Shomie] Novo pedido para visitar a sua propriedade " +
                         property_id + " no dia " + visit_date
                         + " as " + visit_time + ". Dirija-se a www.shomie.io para aceitar ou rejeitar. Cumprimentos.";

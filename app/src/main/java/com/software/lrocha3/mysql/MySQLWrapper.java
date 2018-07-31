@@ -70,7 +70,7 @@ public class MySQLWrapper {
         try {
             statement = this.connect.createStatement();
             resultSet = statement
-                    .executeQuery("SELECT * FROM communication WHERE sms_status = 0 AND state = 0");
+                    .executeQuery("SELECT communication.id, communication.property_id, communication.visit_date, communication.visit_time, properties.landlord_id, landlords.phone_number FROM communication INNER JOIN landlords INNER JOIN properties WHERE communication.sms_status = 0 AND communication.state = 0 AND properties.id = communication.property_id AND properties.landlord_id = landlords.id");
             return resultSet;
         } catch (SQLException e) {
             e.printStackTrace();
