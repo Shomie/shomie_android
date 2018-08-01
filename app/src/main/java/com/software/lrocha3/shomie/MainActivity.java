@@ -16,6 +16,7 @@ import android.text.TextUtils;
 import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.software.lrocha3.mysql.MySQLWrapper;
@@ -74,6 +75,9 @@ public class MainActivity extends AppCompatActivity {
             Snackbar.make(toolbar, "All the permissions needed were not granted.", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         }
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
     }
 
 
