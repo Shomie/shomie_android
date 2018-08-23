@@ -38,7 +38,7 @@ public class MySQLWrapper {
     public void Open() {
         try {
             if (this.connect == null) {
-                this.connect = DriverManager.getConnection("jdbc:mysql://lrocha3.no-ip.org:3306/shomie", "dev", "development");
+                this.connect = DriverManager.getConnection("jdbc:mysql://45.77.89.232:3306/shomie", "root", "password");
             }
         } catch (SQLException e) {
             e.printStackTrace();
